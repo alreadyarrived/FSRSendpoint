@@ -431,13 +431,24 @@ function fsrsEndpoint(req) {
     const dueDate = schedulingInfo.card.due;
     const formattedDueDate = formatDate(dueDate);
     
-    stability = parseFloat(schedulingInfo.card.stability.toFixed(3));
-    difficulty = parseFloat(schedulingInfo.card.difficulty.toFixed(3));
-    state = parseFloat(schedulingInfo.card.state.toFixed(3));
-    reps = parseFloat(schedulingInfo.card.reps.toFixed(3));
-    lapses = parseFloat(schedulingInfo.card.lapses.toFixed(3));
-    elapsed_days = parseFloat(schedulingInfo.card.elapsed_days.toFixed(3));
-    scheduled_days = parseFloat(schedulingInfo.card.scheduled_days.toFixed(3));
+
+          function ldp(num, decimalPlaces, defaultvalue) {
+          if (typeof num === "number" && !isNaN(num)) {
+          return parseFloat(num.toFixed(decimalPlaces));
+          } else {
+          // Handle invalid input, e.g., return a default value or log an error
+          console.error("Invalid number:", num);
+          return defaultvalue; // or any default/fallback value
+          }
+          }
+          
+          stability = ldp(schedulingInfo.card.stability, 5, 0);
+          difficulty = ldp(schedulingInfo.card.difficulty, 5, 4.93);
+          state = ldp(schedulingInfo.card.state, 5, 0);
+          reps = ldp(schedulingInfo.card.reps, 5, 0);
+          lapses = ldp(schedulingInfo.card.lapses, 5, 0);
+          elapsed_days = ldp(schedulingInfo.card.elapsed_days, 5, 0);
+          scheduled_days = ldp(schedulingInfo.card.scheduled_days, 5, 0);
 
     // stability/difficulty/state/reps/lapses/elapsed_days/scheduled_days
 
