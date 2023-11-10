@@ -322,7 +322,7 @@ export async function fsrsEndpoint(req) {
           // Use the matched values directly without declaring new variables
           lastReview = match[1];
           const srsValues = match[2];
-          [difficulty, stability, state, reps, lapses] = srsValues.split("/").map(parseFloat);
+          [stability, difficulty, state, reps, lapses, elapsed_days, scheduled_days] = srsValues.split("/").map(parseFloat);
         } else {
           // Handle the case where the format does not match
           return new Response("Bad Request: Invalid SRS format", { status: 400 });
