@@ -21,7 +21,7 @@ class ReviewLog {
     constructor(rating, elapsed_days, scheduled_days, review, state) {
         this.rating = rating;
         this.elapsed_days = elapsed_days;
-        this.scheduled_days = scheduled_days;
+        this.scheduled_days =  Math.abs(scheduled_days);
         this.review = review;
         this.state = state;
     }
@@ -150,6 +150,7 @@ class FSRS {
             card.elapsed_days = 0;
         } else {
             card.elapsed_days = (now.getTime() - card.last_review.getTime()) / 86400000;
+            card.elapsed_days = Math.abs(card.elapsed_days);
         }
         card.last_review = now;
         card.reps += 1;
@@ -284,8 +285,13 @@ class FSRS {
     }
 }
 
+
 function formatDate(date) {
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+    if (!(date instanceof Date) || isNaN(date.getTime())) {
+        return new Date(); // Return a placeholder or handle the error
+    }
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")
+        }T${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 }
 
 function getRatingKey(grade) {
@@ -319,13 +325,13 @@ export async function fsrsEndpoint(req) {
     if (srs && srs !== "") {
         const match = srs.match(/\[\[date:(.+?)\]\] (.+)/);
         if (match) {
-          // Use the matched values directly without declaring new variables
-          lastReview = match[1];
-          const srsValues = match[2];
-          [stability, difficulty, state, reps, lapses, elapsed_days, scheduled_days] = srsValues.split("/").map(parseFloat);
+            // Use the matched values directly without declaring new variables
+            lastReview = match[1];
+            const srsValues = match[2];
+            [stability, difficulty, state, reps, lapses, elapsed_days, scheduled_days] = srsValues.split("/").map(parseFloat);
         } else {
-          // Handle the case where the format does not match
-          return new Response("Bad Request: Invalid SRS format", { status: 400 });
+            // Handle the case where the format does not match
+            return new Response("Bad Request: Invalid SRS format", { status: 400 });
         }
     }
 
@@ -371,34 +377,30 @@ export async function fsrsEndpoint(req) {
     const ratingKey = getRatingKey(grade);
 
     const schedulingInfo = fsrs.repeat(card, now)[ratingKey];
-    
-    if (!schedulingInfo) {
-        console.error("fsrs.repeat returned undefined. Card:", card, "Now:", now);
-        // Return an error response or implement a fallback mechanism
-        return new Response("Error: Unable to process scheduling information", { status: 500 });
+    console.log(schedulingInfo);
+    const dueDate = schedulingInfo.card.due;
+
+    const formattedDueDate = formatDate(dueDate);
+
+    function ldp(num, decimalPlaces, defaultvalue) {
+        if (typeof num === 'number' && !isNaN(num)) {
+            return parseFloat(num.toFixed(decimalPlaces));
+        } else {
+            // Handle invalid input, e.g., return a default value or log an error
+            console.error('Invalid number:', num);
+            return defaultvalue; // or any default/fallback value
+        }
     }
 
-    const dueDate = schedulingInfo.card.due;
-    const formattedDueDate = formatDate(dueDate);
-    
+    stability = ldp(schedulingInfo.card.stability, 5, 0);
+    difficulty = ldp(schedulingInfo.card.difficulty, 5, 4.93);
+    state = ldp(schedulingInfo.card.state, 5, 0);
+    reps = ldp(schedulingInfo.card.reps, 5, 0);
+    lapses = ldp(schedulingInfo.card.lapses, 5, 0);
+    elapsed_days = ldp(schedulingInfo.card.elapsed_days, 5, 0);
+    scheduled_days = ldp(schedulingInfo.card.scheduled_days, 5, 0);
 
-      function ldp(num, decimalPlaces, defaultvalue) {
-        if (typeof num === "number" && !isNaN(num)) {
-          return parseFloat(num.toFixed(decimalPlaces));
-        } else {
-          // Handle invalid input, e.g., return a default value or log an error
-          console.error("Invalid number:", num);
-          return defaultvalue; // or any default/fallback value
-        }
-      }
-    
-      stability = ldp(schedulingInfo.card.stability, 5, 0);
-      difficulty = ldp(schedulingInfo.card.difficulty, 5, 4.93);
-      state = ldp(schedulingInfo.card.state, 5, 0);
-      reps = ldp(schedulingInfo.card.reps, 5, 0);
-      lapses = ldp(schedulingInfo.card.lapses, 5, 0);
-      elapsed_days = ldp(schedulingInfo.card.elapsed_days, 5, 0);
-      scheduled_days = ldp(schedulingInfo.card.scheduled_days, 5, 0);
+    // stability/difficulty/state/reps/lapses/elapsed_days/scheduled_days
 
     const responseString = `[[date:${formattedDueDate}]] ${stability}/${difficulty}/${state}/${reps}/${lapses}/${elapsed_days}/${scheduled_days}`
     return new Response(responseString);
