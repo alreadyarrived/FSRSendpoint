@@ -431,13 +431,13 @@ function fsrsEndpoint(req) {
     const dueDate = schedulingInfo.card.due;
     const formattedDueDate = formatDate(dueDate);
     
-    stability = schedulingInfo.card.stability;
-    difficulty = schedulingInfo.card.difficulty;
-    state = schedulingInfo.card.state;
-    reps = schedulingInfo.card.reps;
-    lapses = schedulingInfo.card.lapses;
-    elapsed_days = schedulingInfo.card.elapsed_days;
-    scheduled_days = schedulingInfo.card.scheduled_days;
+    stability = parseFloat(schedulingInfo.card.stability.toFixed(3));
+    difficulty = parseFloat(schedulingInfo.card.difficulty.toFixed(3));
+    state = parseFloat(schedulingInfo.card.state.toFixed(3));
+    reps = parseFloat(schedulingInfo.card.reps.toFixed(3));
+    lapses = parseFloat(schedulingInfo.card.lapses.toFixed(3));
+    elapsed_days = parseFloat(schedulingInfo.card.elapsed_days.toFixed(3));
+    scheduled_days = parseFloat(schedulingInfo.card.scheduled_days.toFixed(3));
 
     // stability/difficulty/state/reps/lapses/elapsed_days/scheduled_days
 
