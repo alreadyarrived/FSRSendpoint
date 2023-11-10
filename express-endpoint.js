@@ -4,6 +4,36 @@ const axios = require('axios');
 const app = express();
 app.use(express.json());
 
+const defaultFactor = 2.5
+const defaultInterval = 2
+
+const generateOutput = ({ factor, interval, due }) =>
+          `[[date:${due.toISOString().slice(0, 10)}]] ${factor.toFixed(2)}/${interval.toFixed(2)}`;
+let counter = 0
+
+let tweetCounter=0
+app.get('/get-tweet-text', async (req, res) => {
+        let apiUrl
+        try{
+          const tweetUrl = req.query.url;
+          const tweetId = tweetUrl.split('/').pop().split('?')[0];
+          console.log('tweet',tweetId, tweetCounter)
+                tweetCounter += 1
+           apiUrl = `https://cdn.syndication.twimg.com/tweet-result?id=${tweetId}&token=43p8x53yobw`;
+        } catch(e) {}
+          try {
+              const response = await axios.get(apiUrl);
+                  const tweetText = response.data.text;
+                  res.write( tweetText );
+                      res.end()
+                        } catch (error) {
+                                console.error(error)
+                            res.status(500).json({ error: 'Unable to get tweet text' });
+                              }
+                              });
+
+
+
 app.get("/calculate", (req, res) => {
     console.log("request", new Date().toISOString(), counter)
 
@@ -342,7 +372,7 @@ function fsrsEndpoint(req) {
           // Use the matched values directly without declaring new variables
           lastReview = match[1];
           const srsValues = match[2];
-          [difficulty, stability, state, reps, lapses] = srsValues.split("/").map(parseFloat);
+          [stability, difficulty, state, reps, lapses, elapsed_days, scheduled_days] = srsValues.split("/").map(parseFloat);
         } else {
           // Handle the case where the format does not match
           return new Response("Bad Request: Invalid SRS format", { status: 400 });
@@ -408,6 +438,8 @@ function fsrsEndpoint(req) {
     lapses = schedulingInfo.card.lapses;
     elapsed_days = schedulingInfo.card.elapsed_days;
     scheduled_days = schedulingInfo.card.scheduled_days;
+
+    // stability/difficulty/state/reps/lapses/elapsed_days/scheduled_days
 
     const responseString = `[[date:${formattedDueDate}]] ${stability}/${difficulty}/${state}/${reps}/${lapses}/${elapsed_days}/${scheduled_days}`
     return new Response(responseString);
